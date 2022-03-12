@@ -1,7 +1,6 @@
 import http from "http";
-import WebSocket from "ws";
+import SocketIO from "socket.io"
 import express from "express";
-import { Socket } from "dgram";
 
 const app = express();
 
@@ -22,8 +21,20 @@ const handleListen = function(){
 };
 
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const IoServer = SocketIO(server);
 
+IoServer.on("connection", function(Backsocket){
+    Backsocket.onAny(function(event){
+        console.log(`Backsocket event : ${event}`);
+    });
+    Backsocket.on("Enter", function(Roomname, Do){
+        Backsocket.join(Roomname);
+        Do();
+    });
+});
+
+
+/*
 const Backsockets=[];
 
 wss.on("connection", function(Backsocket){
@@ -45,5 +56,6 @@ wss.on("connection", function(Backsocket){
         }
     });
 });
+*/
 
 server.listen(3000, handleListen);

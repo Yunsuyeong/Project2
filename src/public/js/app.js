@@ -1,3 +1,29 @@
+const Frontsocket = io();
+
+const welcome = document.getElementById("welcome");
+const form = welcome.querySelector("form");
+const chat = document.getElementById("chat");
+
+chat.hidden = true;
+
+let Roomname;
+
+function Showroom(){
+    welcome.hidden = true;
+    chat.hidden = false;
+    const h3 = chat.querySelector("h3");
+    h3.innerText = `This room is ${Roomname}`;
+}
+
+form.addEventListener("submit", function(event){
+    event.preventDefault();
+    const input = form.querySelector("input");
+    Frontsocket.emit("Enter", input.value, Showroom);
+    Roomname = input.value;
+    input.value = "";
+});
+
+/*
 const Nickform = document.querySelector("#nick");
 const Messageform = document.querySelector("#message");
 const Messagelist = document.querySelector("ul");
@@ -35,3 +61,4 @@ Nickform.addEventListener("submit", function(event){
     Frontsocket.send(Makemessage("nickname", input.value));
     input.value="";
 });
+*/

@@ -10,11 +10,15 @@ html(lang="en")
         header 
             h1 Noom 
         main 
-            form#nick
-                input(type="text", placeholder="choose a nickname", required)
-                button select
-            ul
-            form#message
-                input(type="text", placeholder="leave a message", required) 
-                button send
+            div#welcome
+                form
+                    input(type="text", placeholder="enter a room name", required)
+                    button select  
+            div#chat
+                h3 
+                ul 
+                form
+                    input(type="text", placeholder="leave a message", required)
+                    button send 
+        script(src="/socket.io/socket.io.js")
         script(src="/public/js/app.js")
