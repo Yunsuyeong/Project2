@@ -24,15 +24,29 @@ const server = http.createServer(app);
 const IoServer = SocketIO(server);
 
 IoServer.on("connection", function(Backsocket){
+    Backsocket.on("nickname", function(nickname){
+       Backsocket["nickname"] = nickname; 
+    });
     Backsocket.onAny(function(event){
         console.log(`Backsocket event : ${event}`);
     });
-    Backsocket.on("Enter", function(Roomname, Do){
+    Backsocket.on("Enter", function(Roomname, func){
         Backsocket.join(Roomname);
-        Do();
+        func();
+        Backsocket.to(Roomname).emit("welcome", Backsocket.nickname);
+    });
+    Backsocket.on("disconnecting", function(){
+        Backsocket.rooms.forEach(function(room){
+            Backsocket.to(room).emit("bye", Backsocket.nickname);
+        });
+    });
+    Backsocket.on("message", function(message,room,func){
+        Backsocket.to(room).emit("message", `${Backsocket.nickname} : ${message}`);
+        func();
     });
 });
 
+server.listen(3000, handleListen);
 
 /*
 const Backsockets=[];
@@ -57,5 +71,3 @@ wss.on("connection", function(Backsocket){
     });
 });
 */
-
-server.listen(3000, handleListen);

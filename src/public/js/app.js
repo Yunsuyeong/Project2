@@ -2,17 +2,37 @@ const Frontsocket = io();
 
 const welcome = document.getElementById("welcome");
 const form = welcome.querySelector("form");
+const nickname = document.getElementById("nickname");
+const nameform = nickname.querySelector("#name");
 const chat = document.getElementById("chat");
 
 chat.hidden = true;
 
 let Roomname;
 
+function AddMessage(message){
+    const ul = chat.querySelector("ul");
+    const li = document.createElement("li");
+    li.innerText = message;
+    ul.appendChild(li);
+}
+
 function Showroom(){
     welcome.hidden = true;
+    nickname.hidden = true;
     chat.hidden = false;
     const h3 = chat.querySelector("h3");
     h3.innerText = `This room is ${Roomname}`;
+    const messageform = chat.querySelector("#message");
+    messageform.addEventListener("submit", function(event){
+        event.preventDefault();
+        const input = chat.querySelector("#message input");
+        const value = input.value;
+        Frontsocket.emit("message", input.value, Roomname, function(){
+            AddMessage(`You : ${value}`);
+        });
+        input.value = "";
+    });
 }
 
 form.addEventListener("submit", function(event){
@@ -22,6 +42,22 @@ form.addEventListener("submit", function(event){
     Roomname = input.value;
     input.value = "";
 });
+
+nameform.addEventListener("submit", function(event){
+    event.preventDefault();
+    const input = nameform.querySelector("#name input");
+    Frontsocket.emit("nickname", input.value);
+});
+
+Frontsocket.on("welcome", function(user){
+    AddMessage(`${user} joined`);
+});
+
+Frontsocket.on("bye", function(user){
+    AddMessage(`${user} lefted`);
+});
+
+Frontsocket.on("message", AddMessage);
 
 /*
 const Nickform = document.querySelector("#nick");
