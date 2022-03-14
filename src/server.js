@@ -23,6 +23,25 @@ const handleListen = function(){
 const server = http.createServer(app);
 const IoServer = SocketIO(server);
 
+function PublicRooms(){
+    const {
+        sockets:{
+            adapter: { sids, rooms },
+        },
+    } = IoServer;
+    const PublicRooms = [];
+    rooms.forEach(function(_, key){
+        if(sids.get(key)===undefined){
+            PublicRooms.push(key);
+        }
+    });
+    return PublicRooms;
+}
+
+function CountRoom(roomName){
+    return IoServer.sockets.adapter.rooms.get(roomName)?.size;
+}
+
 IoServer.on("connection", function(Backsocket){
     Backsocket.on("nickname", function(nickname){
        Backsocket["nickname"] = nickname; 
@@ -30,15 +49,20 @@ IoServer.on("connection", function(Backsocket){
     Backsocket.onAny(function(event){
         console.log(`Backsocket event : ${event}`);
     });
-    Backsocket.on("Enter", function(Roomname, func){
-        Backsocket.join(Roomname);
+    Backsocket.on("Enter", function(roomName, func){
+        Backsocket.join(roomName);
         func();
-        Backsocket.to(Roomname).emit("welcome", Backsocket.nickname);
+        Backsocket.to(roomName).emit("welcome", Backsocket.nickname, CountRoom(roomName));
+        IoServer.sockets.emit("change", PublicRooms());
     });
+   
     Backsocket.on("disconnecting", function(){
         Backsocket.rooms.forEach(function(room){
-            Backsocket.to(room).emit("bye", Backsocket.nickname);
+            Backsocket.to(room).emit("bye", Backsocket.nickname, CountRoom(room)-1);
         });
+    });
+    Backsocket.on("disconnect", function(){
+        IoServer.sockets.emit("change", PublicRooms());
     });
     Backsocket.on("message", function(message,room,func){
         Backsocket.to(room).emit("message", `${Backsocket.nickname} : ${message}`);

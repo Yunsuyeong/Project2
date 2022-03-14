@@ -5,10 +5,13 @@ const form = welcome.querySelector("form");
 const nickname = document.getElementById("nickname");
 const nameform = nickname.querySelector("#name");
 const chat = document.getElementById("chat");
+const disconnect = document.getElementById("disconnect");
+const leaveform = disconnect.querySelector("#leave");
 
 chat.hidden = true;
+disconnect.hidden = true;
 
-let Roomname;
+let roomName;
 
 function AddMessage(message){
     const ul = chat.querySelector("ul");
@@ -17,47 +20,74 @@ function AddMessage(message){
     ul.appendChild(li);
 }
 
+function OnMessageSubmit(event){
+    event.preventDefault();
+    const input = chat.querySelector("#message input");
+    const value = input.value;
+    Frontsocket.emit("message", input.value, roomName, function(){
+        AddMessage(`You : ${value}`);
+    });
+    input.value = "";
+}
+
+function OnNicknameSubmit(event){
+    event.preventDefault();
+    const input = nameform.querySelector("#name input");
+    Frontsocket.emit("nickname", input.value);
+}
+
 function Showroom(){
     welcome.hidden = true;
     nickname.hidden = true;
     chat.hidden = false;
+    disconnect.hidden = false;
     const h3 = chat.querySelector("h3");
-    h3.innerText = `This room is ${Roomname}`;
+    h3.innerText = `Room : ${roomName}`;
     const messageform = chat.querySelector("#message");
-    messageform.addEventListener("submit", function(event){
-        event.preventDefault();
-        const input = chat.querySelector("#message input");
-        const value = input.value;
-        Frontsocket.emit("message", input.value, Roomname, function(){
-            AddMessage(`You : ${value}`);
-        });
-        input.value = "";
-    });
+    messageform.addEventListener("submit", OnMessageSubmit);
 }
 
-form.addEventListener("submit", function(event){
+function OnChatSubmit(event){
     event.preventDefault();
     const input = form.querySelector("input");
     Frontsocket.emit("Enter", input.value, Showroom);
-    Roomname = input.value;
+    roomName = input.value;
     input.value = "";
-});
+}
 
-nameform.addEventListener("submit", function(event){
-    event.preventDefault();
-    const input = nameform.querySelector("#name input");
-    Frontsocket.emit("nickname", input.value);
-});
 
-Frontsocket.on("welcome", function(user){
+form.addEventListener("submit", OnChatSubmit);
+
+nameform.addEventListener("submit", OnNicknameSubmit);
+
+
+Frontsocket.on("welcome", function(user, count){
+    const h3 = chat.querySelector("h3");
+    h3.innerText = `${roomName} (${count})`;
     AddMessage(`${user} joined`);
 });
 
-Frontsocket.on("bye", function(user){
+Frontsocket.on("bye", function(user, count){
+    const h3 = chat.querySelector("h3");
+    h3.innerText = `${roomName} (${count})`;
     AddMessage(`${user} lefted`);
 });
 
 Frontsocket.on("message", AddMessage);
+
+Frontsocket.on("change", function(rooms){
+    const roomlist = welcome.querySelector("ul");
+    roomlist.innerHTML="";
+    if(rooms.length===0){
+        return;
+    }
+    rooms.forEach(function(room){
+        const li = document.createElement("li");
+        li.innerText = room;
+        roomlist.append(li);
+    });
+});
+
 
 /*
 const Nickform = document.querySelector("#nick");
