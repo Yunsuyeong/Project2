@@ -1,5 +1,109 @@
 const Frontsocket = io();
 
+const myface = document.getElementById("myface");
+const muteButton = document.getElementById("mute");
+const cameraButton = document.getElementById("camera");
+const camerasSelect = document.getElementById("cameras");
+const mikesSelect = document.getElementById("mikes");
+
+
+let myStream;
+
+let muted = false;
+let cameraOff = false;
+
+async function getCameras(){
+    try{
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cameras = devices.filter(device => device.kind === "videoinput");
+        const currentCamera = myStream.getVideoTracks()[0];
+        cameras.forEach(camera => {
+            const option = document.createElement("option");
+            option.value = camera.deviceId;
+            option.innerText = camera.label;
+            if(currentCamera === camera.label){
+                option.selected = true;
+            }
+            camerasSelect.appendChild(option);
+        });
+    } catch(e){
+        console.log(e);
+    }
+}
+
+async function getMikes(){
+    try{
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const mikes = devices.filter(device => device.kind === "audioinput");
+        const currentMike = myStream.getAudioTracks()[0];
+        mikes.forEach(mike => {
+            const option = document.createElement("option");
+            option.value = mike.deviceId;
+            option.innerText = mike.label;
+            if(currentMike === mike.label){
+                option.selected = true;
+            }
+            mikesSelect.appendChild(option);
+        });
+    } catch(e){
+        console.log(e);
+    }
+}
+
+async function getMedia(deviceId){
+    const initialConstraints= {
+        audio:true,
+        video: { facingMode : "user" },
+    };
+    const cameraConstraints= {
+        audio:true,
+        video: { deviceId : { exact : deviceId } },
+    };
+    try{
+        myStream = await navigator.mediaDevices.getUserMedia(
+            deviceId ? cameraConstraints : initialConstraints
+        );
+        myface.srcObject = myStream;
+        if(!deviceId){
+              await getCameras();
+              await getMikes();
+            }  
+    } catch(e){
+        console.log(e);
+    }
+}
+
+
+function OnMuteClick(){
+    myStream
+    .getAudioTracks()
+    .forEach((track) => (track.enabled = !track.enabled));
+    if(!muted){
+        muteButton.innerText = "Unmute";
+        muted = true;
+    } else{
+        muteButton.innerText = "Mute";
+        muted = false;
+    }
+}
+
+function OnCameraClick(){
+    myStream
+    .getVideoTracks()
+    .forEach((track) => (track.enabled = !track.enabled));
+    if(cameraOff){
+        cameraButton.innerText = "Turn Camera Off";
+        cameraOff = false;
+    } else{
+        cameraButton.innerText = "Turn Camera On";
+        cameraOff = true;
+    }
+}
+
+muteButton.addEventListener("click", OnMuteClick);
+cameraButton.addEventListener("click", OnCameraClick);
+
+/*
 const welcome = document.getElementById("welcome");
 const form = welcome.querySelector("form");
 const nickname = document.getElementById("nickname");
@@ -98,6 +202,7 @@ Frontsocket.on("change", function(rooms){
         roomlist.append(li);
     });
 });
+*/
 
 /*
 const Nickform = document.querySelector("#nick");
