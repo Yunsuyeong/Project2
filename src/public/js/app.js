@@ -5,11 +5,9 @@ const form = welcome.querySelector("form");
 const nickname = document.getElementById("nickname");
 const nameform = nickname.querySelector("#name");
 const chat = document.getElementById("chat");
-const disconnect = document.getElementById("disconnect");
-const leaveform = disconnect.querySelector("#leave");
+const list = document.getElementById("list");
 
 chat.hidden = true;
-disconnect.hidden = true;
 
 let roomName;
 
@@ -18,6 +16,19 @@ function AddMessage(message){
     const li = document.createElement("li");
     li.innerText = message;
     ul.appendChild(li);
+}
+
+function AddList(name){
+    const ul = list.querySelector("ul");
+    const li = document.createElement("li");
+    li.innerText = name;
+    ul.appendChild(li);
+}
+
+function DeleteList(){
+    const ul = list.querySelector("ul");
+    const lis = ul.getElementsByTagName("li");
+    lis[0].remove();
 }
 
 function OnMessageSubmit(event){
@@ -40,9 +51,8 @@ function Showroom(){
     welcome.hidden = true;
     nickname.hidden = true;
     chat.hidden = false;
-    disconnect.hidden = false;
     const h3 = chat.querySelector("h3");
-    h3.innerText = `Room : ${roomName}`;
+    h3.innerText = `${roomName}`;
     const messageform = chat.querySelector("#message");
     messageform.addEventListener("submit", OnMessageSubmit);
 }
@@ -60,17 +70,18 @@ form.addEventListener("submit", OnChatSubmit);
 
 nameform.addEventListener("submit", OnNicknameSubmit);
 
-
 Frontsocket.on("welcome", function(user, count){
     const h3 = chat.querySelector("h3");
     h3.innerText = `${roomName} (${count})`;
     AddMessage(`${user} joined`);
+    AddList(`${user}`);
 });
 
 Frontsocket.on("bye", function(user, count){
     const h3 = chat.querySelector("h3");
     h3.innerText = `${roomName} (${count})`;
     AddMessage(`${user} lefted`);
+    DeleteList();
 });
 
 Frontsocket.on("message", AddMessage);
@@ -87,7 +98,6 @@ Frontsocket.on("change", function(rooms){
         roomlist.append(li);
     });
 });
-
 
 /*
 const Nickform = document.querySelector("#nick");
