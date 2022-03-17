@@ -10,15 +10,19 @@ html(lang="en")
         header 
             h1 Noom 
         main 
-            div
+            div#room 
+                form
+                    input(type="text", placeholder="Enter room name", required)
+                    button Enter
+            div#call
                 div#myStream 
                     select#cameras
                         option(value="device") Face camera
                     select#mikes
                         option(value="device") Mike
-                video#myface(autoplay, playsinline, width="400", height="400")
-                button#mute Mute
-                button#camera Turn Camera Off
+                    video#myface(autoplay, playsinline, width="400", height="400")
+                    button#mute Mute
+                    button#camera Turn Camera Off
 
         script(src="/socket.io/socket.io.js")
         script(src="/public/js/app.js")

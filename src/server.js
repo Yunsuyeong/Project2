@@ -16,13 +16,32 @@ app.get("/*", function(request, response){
     response.redirect("/");
 });
 
+const server = http.createServer(app);
+const IoServer = SocketIO(server);
+
+IoServer.on("connection", function(Backsocket){
+    Backsocket.on("Enter", function(roomName){
+        Backsocket.join(roomName);
+        Backsocket.to(roomName).emit("Welcome");
+    });
+    Backsocket.on("Offer", function(offer, roomName){
+        Backsocket.to(roomName).emit("offer", offer);
+    });
+    Backsocket.on("Answer", function(answer, roomName){
+        Backsocket.to(roomName).emit("answer", answer);
+    });
+    Backsocket.on("Ice", function(ice, roomName){
+        Backsocket.to(roomName).emit("ice", ice);
+    });
+});
+
 const handleListen = function(){
     console.log("Listening on http://localhost:3000");
 };
 
-const server = http.createServer(app);
-const IoServer = SocketIO(server);
+server.listen(3000, handleListen);
 
+/*
 function PublicRooms(){
     const {
         sockets:{
@@ -69,8 +88,8 @@ IoServer.on("connection", function(Backsocket){
         func();
     });
 });
+*/
 
-server.listen(3000, handleListen);
 
 /*
 const Backsockets=[];

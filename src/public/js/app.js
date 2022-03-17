@@ -1,4 +1,5 @@
 const Frontsocket = io();
+// Call
 
 const myface = document.getElementById("myface");
 const muteButton = document.getElementById("mute");
@@ -6,6 +7,9 @@ const cameraButton = document.getElementById("camera");
 const camerasSelect = document.getElementById("cameras");
 const mikesSelect = document.getElementById("mikes");
 
+const call = document.getElementById("call");
+
+call.hidden = true;
 
 let myStream;
 
@@ -100,8 +104,79 @@ function OnCameraClick(){
     }
 }
 
+async function OnCameraChange(){
+    await getMedia(camerasSelect.value);
+}
+
+async function OnMikeChange(){
+    await getMedia(mikesSelect.value);
+}
+
 muteButton.addEventListener("click", OnMuteClick);
 cameraButton.addEventListener("click", OnCameraClick);
+camerasSelect.addEventListener("input", OnCameraChange);
+mikesSelect.addEventListener("input", OnMikeChange);
+
+// Room
+const room = document.getElementById("room");
+const roomform = room.querySelector("form");
+
+
+async function initCall(){
+    room.hidden = true;
+    call.hidden = false;
+    await getMedia();
+    makeConnection();
+}
+
+async function OnRoomSubmit(event){
+    event.preventDefault();
+    const input = roomform.querySelector("input");
+    await initCall();
+    Frontsocket.emit("Enter", roomName);
+    roomName = input.value;
+    input.value = "";
+}
+
+
+roomform.addEventListener("submit", OnRoomSubmit);
+
+// Frontsocket
+
+Frontsocket.on("Welcome", async function(){
+    const offer = await myPeerConnection.createOffer();
+    myPeerConnection.setLocalDescription(offer);
+    Frontsocket.emit("Offer", offer, roomName);
+});
+
+Frontsocket.on("Offer", async function(offer){
+    myPeerConnection.setRemoteDescription(offer);
+    const answer = await myPeerConnection.createAnswer();
+    myPeerConnection.setLocalDescription(answer);
+    Frontsocket.emit("Answer", answer, roomName);
+});
+
+Frontsocket.on("Answer", function(answer){
+    myPeerConnection.setRemoteDescription(answer);
+});
+
+Frontsocket.on("Ice", function(ice){
+    myPeerConnection.addIceCandidate(ice);
+});
+
+// RTC
+
+function makeConnection(){
+    myPeerConnection = new RTCPeerConnection();
+    myPeerConnection.addEventListener("icecandidate", OnIce);
+    myStream
+    .getTracks()
+    .forEach(track => myPeerConnection.addTrack(track, myStream));
+}
+
+function OnIce(data){
+    Frontsocket.emit("Ice", data.candidate, roomName);
+}
 
 /*
 const welcome = document.getElementById("welcome");
