@@ -15,6 +15,8 @@ let myStream;
 
 let muted = false;
 let cameraOff = false;
+let roomName;
+let myPeerConnection;
 
 async function getCameras(){
     try{
@@ -106,10 +108,24 @@ function OnCameraClick(){
 
 async function OnCameraChange(){
     await getMedia(camerasSelect.value);
+    if(myPeerConnection){
+        const videoTrack = myStream.getVideoTracks()[0];
+        const videoSender = myPeerConnection
+            .getSenders()
+            .find((sender) => sender.track.kind === "video");
+        videoSender.replaceTrack(videoTrack);
+    }
 }
 
 async function OnMikeChange(){
     await getMedia(mikesSelect.value);
+    if(myPeerConnection){
+        const audioTrack = myStream.getAudioTracks()[0];
+        const audioSender = myPeerConnection
+        .getSenders()
+        .find((sender) => sender.track.kind === "audio");
+    audioSender.replaceTrack(audioTrack);
+    }
 }
 
 muteButton.addEventListener("click", OnMuteClick);
@@ -167,8 +183,21 @@ Frontsocket.on("Ice", function(ice){
 // RTC
 
 function makeConnection(){
-    myPeerConnection = new RTCPeerConnection();
+    myPeerConnection = new RTCPeerConnection({
+        iceServer: [
+            {
+              urls: [
+                "stun:stun.l.google.com:19302",
+                "stun:stun1.l.google.com:19302",
+                "stun:stun2.l.google.com:19302",
+                "stun:stun3.l.google.com:19302",
+                "stun:stun4.l.google.com:19302"
+              ],
+            },
+        ],
+    });
     myPeerConnection.addEventListener("icecandidate", OnIce);
+    myPeerConnection.addEventListener("addstream", OnAddStream);
     myStream
     .getTracks()
     .forEach(track => myPeerConnection.addTrack(track, myStream));
@@ -176,6 +205,11 @@ function makeConnection(){
 
 function OnIce(data){
     Frontsocket.emit("Ice", data.candidate, roomName);
+}
+
+function OnAddStream(data){
+    const peerface = document.getElementById("peerface");
+    peerface.srcObject = data.stream;
 }
 
 /*
